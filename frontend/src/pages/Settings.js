@@ -1,6 +1,24 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { getStatus } from "../api";
 
 function Settings() {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStatus() {
+      setLoading(true);
+      try {
+        const s = await getStatus();
+        setStatus(s);
+      } catch (e) {
+        setStatus(null);
+      }
+      setLoading(false);
+    }
+    fetchStatus();
+  }, []);
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-4">Settings</h1>
@@ -11,7 +29,13 @@ function Settings() {
       </div>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <div className="font-semibold mb-2">Network Status</div>
-        <div className="text-green-500">Connected</div>
+        {loading ? (
+          <div className="text-gray-400">Loading...</div>
+        ) : status ? (
+          <div className="text-green-500">{status.status} (Height: {status.height})</div>
+        ) : (
+          <div className="text-red-500">Disconnected</div>
+        )}
       </div>
     </div>
   );
