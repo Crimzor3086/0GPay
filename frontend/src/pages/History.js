@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getLedger } from "../api";
-
-const WALLET_ADDRESS = "0xYourWalletAddress"; // Replace with actual wallet logic
+import { getWallet } from "../wallet";
 
 function filterTxs(txs, filter) {
   const now = Date.now();
@@ -25,16 +24,22 @@ function History() {
   const [txs, setTxs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("Today");
+  const [wallet, setWallet] = useState(null);
+
+  useEffect(() => {
+    setWallet(getWallet());
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
+      if (!wallet) return;
       setLoading(true);
       try {
         const ledger = await getLedger();
         let allTxs = [];
         for (const block of ledger) {
           for (const tx of block.transactions || []) {
-            if (tx.sender === WALLET_ADDRESS || tx.receiver === WALLET_ADDRESS) {
+            if (tx.sender === wallet.address || tx.receiver === wallet.address) {
               allTxs.push(tx);
             }
           }
@@ -46,7 +51,7 @@ function History() {
       setLoading(false);
     }
     fetchData();
-  }, []);
+  }, [wallet]);
 
   const filtered = filterTxs(txs, filter);
 
@@ -68,11 +73,11 @@ function History() {
             {filtered.map((tx, i) => (
               <li key={i} className="mb-2 flex items-center">
                 <span className={
-                  tx.receiver === WALLET_ADDRESS
+                  tx.receiver === (wallet && wallet.address)
                     ? "text-green-500 mr-2"
                     : "text-red-500 mr-2"
                 }>
-                  {tx.receiver === WALLET_ADDRESS ? "+" : "-"}
+                  {tx.receiver === (wallet && wallet.address) ? "+" : "-"}
                 </span>
                 <span className="font-mono text-sm">
                   {tx.amount} 0G from {tx.sender.slice(0, 6)}... to {tx.receiver.slice(0, 6)}... <span className="text-gray-400 ml-2">{new Date(tx.timestamp).toLocaleString()}</span>
